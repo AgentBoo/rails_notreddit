@@ -1,0 +1,18 @@
+<h1>Signup!</h1>
+
+<% if @user.errors.any? %>
+  <h2>Please correct the problems below before signing up.</h2>
+  <ul>
+    <% @user.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<%= form_for :user, url: users_path do |f| %>
+  Username : <%= f.text_field :user %>
+  Email: <%= f.text_field :email %>
+  Password: <%= f.password_field :password %>
+  Password Confirmation: <%= f.password_field :password_confirmation %>
+  <%= f.submit "Sign me up" %>
+<% end %>

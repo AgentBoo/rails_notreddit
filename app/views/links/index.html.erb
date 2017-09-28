@@ -1,0 +1,10 @@
+<%= link_to 'Log in', new_session_path %>
+<%= link_to 'Sign up', new_user_path %>
+<%= link_to 'Log out', session_path, method: :delete %>
+
+<% @links.each do |link| %>
+  <%= button_to 'Upvote', link_up_votes_path(link.id) %>
+  <%= link.up_votes.count %>
+  <%= button_to 'Downvote', link_up_vote_path(link.id), method: :delete %>
+  <%= link_to link.title, link_path(link)%>
+<% end %>

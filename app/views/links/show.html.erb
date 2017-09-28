@@ -1,0 +1,26 @@
+<%= @link.title %>
+<%= @link.url %>
+<%= @link.notes %>
+<%= @link.user.user %>
+<%= button_to 'Upvote', link_up_votes_path(@link) %>
+<%= @link.up_votes.count %>
+<%= button_to 'Downvote', link_up_vote_path(@link), method: :delete %>
+
+
+<h5> Add comment: </h5>
+<%= form_for ([@link, @link.comments.new]), url: link_comments_path(@link), method: :post do |f| %>
+  <p>
+    <%= f.text_field :body %>
+  </p>
+<%= f.submit %>
+<% end %>
+
+<h5> Comments </h5>
+<% @link.comments.each do |comment| %>
+  <p>
+    <%= comment.body %>
+    <%= comment.user.user if comment.user %>
+
+  <p>
+<% end %>
+<%= link_to 'Edit', edit_link_path %>
