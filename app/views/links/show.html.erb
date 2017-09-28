@@ -2,9 +2,8 @@
 <%= @link.url %>
 <%= @link.notes %>
 <%= @link.user.user %>
-<%= button_to 'Upvote', link_up_votes_path(@link) %>
 <%= @link.up_votes.count %>
-<%= button_to 'Downvote', link_up_vote_path(@link), method: :delete %>
+
 
 
 <h5> Add comment: </h5>

@@ -1,0 +1,261 @@
+Protocol:
+A/ Log in, sign up
+
+1/cli
+rails g resource Link title:string url:text media:string sub:string user:references
+=>
+invoke  active_record
+create    db/migrate/20170926162048_create_links.rb
+create    app/models/link.rb
+invoke    test_unit
+create      test/models/link_test.rb
+create      test/fixtures/links.yml
+invoke  controller
+create    app/controllers/links_controller.rb
+invoke    erb
+create      app/views/links
+invoke    test_unit
+create      test/controllers/links_controller_test.rb
+invoke    helper
+create      app/helpers/links_helper.rb
+invoke      test_unit
+invoke    assets
+invoke      coffee
+create        app/assets/javascripts/links.coffee
+invoke      scss
+create        app/assets/stylesheets/links.scss
+invoke  resource_route
+ route    resources :links
+
+2/cli
+rails db:migrate
+
+3/cli
+rails g resource Comment body:text link:references user:references
+=>
+invoke  active_record
+create    db/migrate/20170926162124_create_comments.rb
+create    app/models/comment.rb
+invoke    test_unit
+create      test/models/comment_test.rb
+create      test/fixtures/comments.yml
+invoke  controller
+create    app/controllers/comments_controller.rb
+invoke    erb
+create      app/views/comments
+invoke    test_unit
+create      test/controllers/comments_controller_test.rb
+invoke    helper
+create      app/helpers/comments_helper.rb
+invoke      test_unit
+invoke    assets
+invoke      coffee
+create        app/assets/javascripts/comments.coffee
+invoke      scss
+create        app/assets/stylesheets/comments.scss
+invoke  resource_route
+ route    resources :comments
+
+4/cli -- btw, mrs smartypants, this is g model, so no controllers for you; you have to create your own
+rails g model User user:string email:string password:digest
+=>
+invoke  active_record
+create    db/migrate/20170926204027_create_users.rb
+create    app/models/user.rb
+invoke    test_unit
+create      test/models/user_test.rb
+create      test/fixtures/users.yml
+
+5/ cli
+alias kitties="./bin/rails"
+rails db:migrate
+
+6/cli
+rails g controller Sessions
+=>
+create  app/controllers/sessions_controller.rb
+invoke  erb
+create    app/views/sessions
+invoke  test_unit
+create    test/controllers/sessions_controller_test.rb
+invoke  helper
+create    app/helpers/sessions_helper.rb
+invoke    test_unit
+invoke  assets
+invoke    coffee
+create      app/assets/javascripts/sessions.coffee
+invoke    scss
+create      app/assets/stylesheets/sessions.scss
+
+7/ app/controllers/sessions_controller.rb
+added new, create, destroy
+
+8/ config/routes.rb
+# all singular -- resource, session
+added resource :session, root to: sessions#new
+
+9/ app/models/user.rb
+added validation of email
+added before_validation hook
+declared private downcase_email
+# don't forget to go back and do
+add_index :email, unique: true
+
+10/ app/controllers/application_controller.rb
+define helper_method :current_user
+
+11/ app/views/sessions/new.html.erb
+create login template
+
+12/cli
+rails g controller Users
+=>
+create  app/controllers/users_controller.rb
+invoke  erb
+create    app/views/users
+invoke  test_unit
+create    test/controllers/users_controller_test.rb
+invoke  helper
+create    app/helpers/users_helper.rb
+invoke    test_unit
+invoke  assets
+invoke    coffee
+create      app/assets/javascripts/users.coffee
+invoke    scss
+create      app/assets/stylesheets/users.scss
+
+13/ app/controllers/users_controller.rb
+declared new and create actions (sign up)
+
+14/ config/routes.rb
+added resources :users
+
+15/ app/views/sessions/new.html.erb
+# log in form
+added hyperlinks for signup
+
+16/ app/views/users/new.html.erb
+# I didn't already have this dir, because I did rails g model and not rails g resource
+create signup template
+# but I did do rails g controller Users before this step
+created sign up template
+
+17/ Gemfile
+please uncomment gem for bcrypt --
+
+# FINISH UP user validation
+==================================================================================
+B/ crud post, crud comment
+1/ app/controllers/links_controller
+# I already have a model for a link, route/resources, controller for a link, view dir for a link
+declare index, new, create, show, edit, update
+privatized link_params
+
+2/ app/views/links/new.html.erb
+made a form
+
+3/ app/views/links/index.html.erb
+made a primitive display of links
+
+4/ app/controllers/links_controller
+@link.user_id = session[:user_id]
+
+5/ app/views/links/show.html.erb
+displayed title, url, notes
+# come back to display comments
+
+6/ app/views/links/edit.html.erb
+displayed for edit -- no delete
+
+7/cli
+rails g migration add_notes_to_links notes:text
+
+8/ app/models/link.rb, app/models/user.rb, app/models/comment.rb
+added associations + I already defined references for routes and foreign key columns when generating resources, so no extra migrations
+
+9/cli
+rails g migration give_sub_default_value_all
+
+10/ db/migrate/corresponding migration
+added up + change_column_default and down
+
+11/cli
+rails db:migrate
+
+12/ app/models/
+added validations to all models
+
+13/ config/routes.rb
+changed resources hierarchy
+resources :links do
+  resources :comments
+end
+
+14/ app/controllers/comments_controller.rb
+adjusted created
+def create
+  @link = Link.find(params[:link_id])
+  @comment = @link.comments.new(comment_params)
+  @comment.user_id = session[:user_id]
+  @comment.save
+  redirect_to link_path(@link)
+end
+
+15/cli
+rails g model ReplyComments link:references user:references
+# just table of comments to comments
+# oops, I meant to do replyComments and then upVotes, but I combined them
+rails db:rollback
+rails destroy model ReplyComments
+
+16/cli
+rails g resource UpVotes link:references user:references
+# same logic for masterComments[=Comments for now maybe] applies here
+
+17/cli
+rails db:migrate
+
+18/app/models/user.rb, app/models/link.rb
+has_many :up_votes
+
+19/ app/controllers/up_votes_controller/rb
+declare create and destroy
+
+20/ config/routes.rb
+changed resources hierarchy
+resources :links do
+  resources :comments
+  resources :up_votes
+end
+21/
+<%= button_to 'Downvote', link_up_vote_path, method: :delete %>
+==================================================================================
+C/ homepage
+# log in, sign in
+# index with everything
+# index with sign out
+
+1/ config/routes
+root to links#index
+
+2/ app/controllers/sessions_controller.rb
+changed destroy: redirect_to links#index
+
+3/ app/views/links/index.html.erb
+made a partial for log out
+made a partial for log in, sign up
+
+4/ app/views/links/show.html.erb
+display commenter name
+<%= coment.user.user if comment.user %> had to be added because rails doesn't like usernames that are nil
+#seed with complete info users
+#figure out how to reply to comments
+=================================================================================
+D/ taking away edit/delete/ capability from plebs and not OPs
+if book.user == current_user
+<put the buttons in here>
+end
+
+find book
+if user is the right user for the right book for the logged in user
+destroy the book

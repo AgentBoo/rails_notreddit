@@ -3,8 +3,8 @@
 <%= link_to 'Log out', session_path, method: :delete %>
 
 <% @links.each do |link| %>
-  <%= button_to 'Upvote', link_up_votes_path(link.id) %>
+  <%= button_to 'Upvote', link_up_votes_path(link) %>
   <%= link.up_votes.count %>
-  <%= button_to 'Downvote', link_up_vote_path(link.id), method: :delete %>
+  <%= button_to 'Downvote', link_up_vote_path(link, link.up_votes), method: :delete %>
   <%= link_to link.title, link_path(link)%>
 <% end %>
