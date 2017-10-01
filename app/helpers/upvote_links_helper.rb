@@ -1,0 +1,2 @@
+module UpvoteLinksHelper
+end

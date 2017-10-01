@@ -1,0 +1,256 @@
+# NOTE
+rails db:rollback
+rails destroy model <modelname>
+rails c => Model.delete_all
+
+1/cli
+rails g resource Link title:text url:text subforum:string
+
+======
+2/cli
+rails g migration add_user_to_links user:references                             # rails generate migration add_fieldname_to_tablename fieldname:string
+rails g migration change_subforum_default
+
+=============================
+3/db/corresponding migration
+def up
+  change_column_default :links, :subforum, 'all'
+end
+
+def down
+  change_column_default :links, :subforum, nil
+end
+
+=====
+4/cli
+rails db:migrate
+
+===================
+5/ ~/.bash_profile
+alias psyduck="./bin/rails"
+
+======
+6/cli
+rails g resource Comment body:text reply_id:integer reply_type:string
+
+rails g migration add_user_to_comments user:references
+
+======
+7/cli
+rails db:migrate
+
+=======================
+8/ app/models/link.rb
+belongs_to :user
+has_many :comments, as: :reply
+
+=========================
+9/ app/models/comment.rb
+belongs_to  :user
+belongs_to  :reply, polymorphic: true
+has_many    :comments, as: :reply
+
+=====================
+10/ config/routes.rb
+resources :links do
+  resources :comments
+end
+
+resources :comments do
+  resources :comments
+end
+
+root to: 'links#index'
+
+=====================================
+11/ app/controllers/links_controller
+def index, show
+
+========================================
+12/ app/controllers/comments_controller
+def new, create, comment_params, before_action :find_reply
+
+=======
+13/cli
+rails g resource User username:string email:string password:digest
+
+=========
+14/ Gemfile
+uncomment bcrypt
+
+=======
+15/cli
+rails g controller Sessions
+
+======================
+16/ config/routes.rb
+added resource: session                                                         # all singular -- resource, session
+
+===========================================
+17/ app/controllers/sessions_controller.rb
+added new, create, destroy
+
+======================
+18/ app/models/user.rb
+added validation of username
+added validation of email
+added before_validation hook downcase_email
+declared private downcase_email
+
+=======================
+19/ app/models/user.rb
+has_many :links
+has_many :comments
+
+===========================================
+20/ app/controllers/application_controller
+declare private helper_method :current_user
+
+=========================================
+21/ app/controllers/users_controller.rb
+declared new, create, private user_params
+
+=====================================
+22/ app/views/sessions/new.html.erb
+create login template + hyperlinks for signup
+
+=================================
+23/ app/views/users/new.html.erb
+create signup template
+
+# NOTE: finish up password confirmation sometime later
+
+#################################################################################
+1/ app/controllers/links_controller
+# CRUD link
+declare index, new, create, show, edit, update
+private link_params
+
+2/ app/views/links/new.html.erb
+made a form
+
+3/ app/views/links/show.html.erb
+show link after creation
+show comments
+<%= render(partial: 'comments/comment', collection: @link.comments) %>          # you have to specify it is a partial
+
+3.5/ app/views/links/index.html.erb
+display all links
+
+4/ app/views/comments/_comment.html.erb
+comment partial form
+
+5/ app/controllers/comments_controller
+@comment.user_id = session[:user_id]
+
+6/ app/controllers/edit.html.erb
+display form for edit
+
+7/ app/models/*
+added validations to all models
+# need to finish password confirm
+
+8/ config/routes.rb
+checked resources hierarchy
+resources :links do
+  resources :comments
+end
+
+9/cli
+rails g migration add_notes_to_links notes:text
+
+10/cli
+rails g model LinkUpvote link:references user:references
+rails g controller link_upvotes                                                 # check if the controller class name is LinkUpvotesController
+
+10.5/cli
+rails db:migrate
+
+11/ app/models/user.rb && app/models/link.rb
+has_many :link_upvotes
+has_many :link_downvotes
+
+12/ config/routes.rb
+resources :links do
+  resources :link_upvotes, only: [:create, :destroy]
+  resources :link_downvotes, only: [:create, :destroy]
+end
+
+13/ app/controllers/link_upvotes
+declared create, destroy
+
+14/ app/views/links/index.html.erb
+<%= button_to 'Upvote', link_link_upvotes_path(link), method: :post %>
+<%= link.link_upvotes.count %>
+
+15/ app/models/links
+has_many    :comments, as: :reply, dependent: :destroy                           # not dependent: :delete_all [that behaves differently, ionno why]
+has_many    :link_upvotes, dependent: :destroy
+has_many    :link_downvotes, dependent: :destroy
+
+16/cli
+rails g model LinkDownvote link:references user:references
+rails g controller LinkDownvotes
+
+16.5/cli
+rails db:migrate
+
+17/ app/controllers/link_downvotes
+declared create, destroy
+
+18/ app/views/links/index.html.erb
+<%= button_to 'Downvote', link_link_downvote_path(link), method: :post %>
+
+19/ app/controllers/link_upvotes
+uncommented destroy
+def create
+  @link = Link.find(params[:link_id])
+  if !@link.link_upvotes.find_by :user_id => session[:user_id]
+      @upvote = @link.link_upvotes.new(:user_id => session[:user_id])
+      @upvote.save
+  end
+  if  @link.link_downvotes.find_by :user_id => session[:user_id]
+      @link.link_downvotes.find_by(:user_id => session[:user_id]).destroy
+  end
+  redirect_to links_path
+end
+
+19.5/ app/controllers/link_downvotes
+uncommented destroy
+def create
+  @link = Link.find(params[:link_id])
+
+  if !@link.link_downvotes.find_by(:user_id => session[:user_id])
+      @downvote = @link.link_downvotes.new(:user_id => session[:user_id])
+      @downvote.save
+  end
+  if  @link.link_upvotes.find_by(:user_id => session[:user_id])
+      @link.link_upvotes.find_by(:user_id => session[:user_id]).destroy
+  end
+  redirect_to links_path
+end
+
+
+20/ config/routes.rb
+#changes to resources
+resources :links do
+  resources :comments
+  resources :link_upvotes, only: [:create]
+  resources :link_downvotes, only: [:create]
+end
+
+#make sure that upvote means destroy downvote, and downvote means destroy upvote
+#seed with complete info users
+# I accidentally migrated/rolledback too many migrations during my strange rapid brain fart
+=> if you don't mind losing data:
+rake db:drop db:create db:migrate
+
+=================================================================================
+D/ taking away edit/delete/ capability from plebs and not OPs
+if book.user == current_user
+<put the buttons in here>
+end
+
+find book
+if user is the right user for the right book for the logged in user
+destroy the book

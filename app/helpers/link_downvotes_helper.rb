@@ -1,0 +1,2 @@
+module LinkDownvotesHelper
+end

@@ -1,0 +1,14 @@
+<h1>Login</h1>
+
+<% if current_user %>
+  You are now logged in as: <%= current_user.email %>.
+<% else %>
+  You are not logged in. Need an account? <%= link_to "Sign up", new_user_path %>.
+<% end %>
+
+
+<%= form_tag session_path do %>
+  Email: <%= text_field_tag :email %>
+  Password: <%= password_field_tag :password %>
+  <%= submit_tag "Submit" %>
+<% end %>

@@ -1,0 +1,8 @@
+<%= form_for @link do |f| %>
+  Title <%= f.text_field :title %><br>
+  URL <%= f.text_field :url %><br>
+  Content <%= f.text_field :notes %> <br>
+  Sub <%= f.text_field :subforum %><br>
+
+  <%= f.submit %>
+<% end %>

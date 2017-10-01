@@ -1,0 +1,10 @@
+<h1> Links </h1>
+<%= link_to 'Create a post', new_link_path %><br>
+
+<% @links.each do |link| %>
+  <%= button_to 'Upvote', link_link_upvotes_path(link), method: :post %>
+  <%= link.link_upvotes.count - link.link_downvotes.count%>
+  <%= button_to 'Downvote', link_link_downvotes_path(link), method: :post %>
+  <%= link_to link.title, target: "_blank" %><br>
+  <%= link_to "Comments", link %><br>
+<% end %>
